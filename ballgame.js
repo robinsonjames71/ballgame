@@ -6,8 +6,7 @@
 		dampening = 0.99,
 		pullStrength = -0.002,
 		maxSpeed = 5,
-		offset = 200,
-		repulsion = 1;
+		offset = 200;
 
 	function getRandomInt(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -31,7 +30,7 @@
 			c.arc(circle.x, circle.y, circle.radius, 0, 2*Math.PI);
 			c.closePath();
 			c.moveTo(this.x, this.y);
-			c.lineTo(this.x2, this.y2);
+			// c.lineTo(this.x2, this.y2);
 			c.fillStyle = 'rgba(0,0,0,0.5)';
 			c.fill();
 			c.lineCap = "round";
@@ -64,18 +63,20 @@
 	}
 
 	function executeFrame(){
+		// Set a maximum speed
+		speedThrottle();
+
 		// Increment location by velocity
 		circle.x += circle.vx;
 		circle.y += circle.vy;
 
 		// Increment Gravity
 		circle.vy += gravity;
+		circle.vx += 0.0000001;
 
 		// Slow down velocity
 		circle.vx *= dampening;
 		circle.vy *= dampening;
-
-		speedThrottle();
 
 		// Top border
 		if (circle.y + circle.radius < offset) {
@@ -133,14 +134,14 @@
 			var mousePosX = event.pageX - 10,
 				mousePosY = event.pageY - 10;
 			var ballMinX = circle.x - circle.radius,
-				ballMinY = circle.y - circle.radius;
-			var ballMaxX = circle.x + circle.radius,
+				ballMinY = circle.y - circle.radius,
+				ballMaxX = circle.x + circle.radius,
 				ballMaxY = circle.y + circle.radius;
 
-			var dx = mousePosX - circle.x,
-				dy = mousePosY - circle.y;
 			if (mousePosX <= ballMaxX && mousePosX >= ballMinX && mousePosY <= ballMaxY && mousePosY >= ballMinY) {
 
+			var dx = mousePosX - (circle.x),
+				dy = mousePosY - (circle.y);
 				circle.vx += dx * pullStrength;
 				circle.vy += dy * pullStrength;
 				speedThrottle();
@@ -178,13 +179,8 @@
 		var ex = t * dx + hoop.x1;
 		var ey = t * dy + hoop.y1;
 
-		// console.log('ex: ' + ex);
-		// console.log('ey: ' + ey);
 		// circle.x2 = ex;
 		// circle.y2 = ey;
-		// console.log(t);
-		circle.x2 = ex;
-		circle.y2 = ey;
 
 		// compute the euclidean distance from E to C
 		var lec = Math.sqrt( Math.pow((ex - circle.x),2) + Math.pow((ey - circle.y),2) );
@@ -193,27 +189,19 @@
 		if( lec < circle.radius ) {
 		    // compute distance from t to circle intersection point
 		    var dt = Math.sqrt( Math.pow((circle.radius),2) - Math.pow((lec),2) );
-		    //console.log(dt);
 
 		    // compute first intersection point on the x (fx) and y (fy) axis
 		    var fx = (t - dt) * dx + hoop.x1;
 		    var fy = (t - dt) * dy + hoop.y1;
-		    //var fOnline = is_on(fx, fy);
-		    // console.log(fx + ',' + fy);
-		    //console.log(fOnline);
 
 		    // compute second intersection point on the x (gx) and y (gy) axis
 		    var gx = (t + dt) * dx + hoop.x1;
 		    var gy = (t + dt) * dy + hoop.y1;
-		    //var gOnline = is_on(gx, gy);
-		    // console.log(gx + ',' + gy);
 
 		    if ((fx > hoop.x1 && fy > hoop.y1) && (fx < hoop.x2 && fy < hoop.y2) || (gx > hoop.x1 && gy > hoop.y1) && (gx < hoop.x2 && gy < hoop.y2)) {
 				circle.vx = -Math.abs(circle.vx);
 			 	circle.vy = -Math.abs(circle.vy);
 			 }
-
-		    // console.log('circle intersects line at: (' + fx + ',' + fy + ') and: (' + gx + ',' + gy + ')');
 		}
 		// else test if the line is tangent to circle
 		else if( lec == circle.radius ) {
@@ -225,35 +213,19 @@
 		}
 	}
 
-	function distance(c1, c2) {
-		return Math.sqrt( Math.pow(hoop.x1 - c1, 2) + Math.pow(hoop.x2 - c2, 2) )
-	}
-	function distance2(c1, c2) {
-		return Math.sqrt( Math.pow(c1 - hoop.x2, 2) + Math.pow(c2 - hoop.y2, 2) )
-	}
-	function distance3() {
-		return Math.sqrt( Math.pow(hoop.x1 - hoop.x2, 2) + Math.pow(hoop.y1 - hoop.y2, 2) )
-	}
-	function is_on(c1, c2) {
-		console.log(distance(c1, c2));
-		console.log(distance2(c1, c2));
-		console.log(distance3());
-		return distance(c1, c2) + distance2(c1, c2) == distance3();
-	}
-
 	function speedThrottle() {
 		// Set a maximum speed
-		if(circle.vx > maxSpeed) {
-			circle.vx = maxSpeed;
+		if(circle.vx > 20) {
+			circle.vx = maxSpeed + circle.vx / maxSpeed;
 		}
-		if(circle.vx < -maxSpeed) {
-			circle.vx = -maxSpeed;
+		if(circle.vx < -20) {
+			circle.vx /= -maxSpeed - circle.vx / maxSpeed;
 		}
-		if(circle.vy > maxSpeed) {
-			circle.vy = maxSpeed;
+		if(circle.vy > 20) {
+			circle.vy /= maxSpeed + circle.vy / maxSpeed;
 		}
-		if(circle.vy < -maxSpeed) {
-			circle.vy = -maxSpeed;
+		if(circle.vy < -20) {
+			circle.vy /= -maxSpeed - circle.vy / maxSpeed;
 		}
 	}
 
