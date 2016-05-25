@@ -1,4 +1,6 @@
 (function(){
+	var netTop = false,
+		points = 0;
 
 	var canvas = document.getElementById("ball");
 		c = canvas.getContext('2d'),
@@ -63,10 +65,10 @@
 	var hoop = {
 		x1: 500,
 		y1: 250,
-		x2: 550,
+		x2: 520,
 		y2: 300,
+		backX: 600,
 		lineWidth: 5,
-
 		draw: function() {
 			c.beginPath();
 			c.moveTo(this.x1, this.y1);
@@ -78,6 +80,19 @@
 			c.beginPath();
 			c.moveTo(600, 300);
 			c.lineTo(600, 250);
+			c.stroke();
+		},
+		net: function(){
+			c.beginPath();
+			c.moveTo(this.x1, this.y1);
+			c.lineTo(this.backX, this.y1);
+			c.lineWidth = this.lineWidth;
+			c.lineCap = "round";
+			c.strokeStyle = '#7ec0ee';
+			c.stroke();
+			c.beginPath();
+			c.moveTo(this.x2, this.y2);
+			c.lineTo(this.backX, this.y2);
 			c.stroke();
 		}
 	}
@@ -119,36 +134,12 @@
 			circle.vx = -Math.abs(circle.vx);
 		}
 
-		// Hoop border
-		// if (circle.x + circle.radius > 500 && circle.x + circle.radius < 550 && circle.y + circle.radius > 250 && circle.y + circle.radius < 300) {
-			//circle.x = canvas.width - offset - circle.radius;
-		// 	circle.vx = -Math.abs(circle.vx) * 0.95;
-		// 	circle.vy = -Math.abs(circle.vy) * 0.95;
-		// }
-
-		//console.log('circle.x + circle.radius: ' + circle.x + circle.radius);
-
 		c.clearRect(0, 0, canvas.width, canvas.height);
 
-		// Hoop Net
-		c.beginPath();
-		c.moveTo(500, 250);
-		c.lineWidth = 5;
-		c.lineCap = "round";
-		c.lineTo(600, 250);
-		c.strokeStyle = '#7ec0ee';
-		c.stroke();
-		c.beginPath();
-		c.moveTo(550, 300);
-		c.lineTo(600, 300);
-		c.stroke();
-
 		// Hoop
+		hoop.net();
 		hoop.draw();
 		circle.draw();
-
-		var adjx = (circle.radius * Math.cos((this.angle + 90) * Math.PI / 180)) + circle.x;
-		var adjy = (circle.radius * Math.sin((this.angle + 90) * Math.PI / 180)) + circle.y;
 
 		canvas.addEventListener('mousemove', function(event){
 			var mousePosX = event.pageX - 10,
@@ -168,35 +159,67 @@
 		});
 
 		// Test ball position event
-		// canvas.addEventListener('mousemove', function(event){
-		// 	var mousePosX = event.pageX - 10,
-		// 		mousePosY = event.pageY - 10;
-		// 	circle.x = mousePosX;
-		// 	circle.y = mousePosY;
-		// });
-		hoopCollide();
+		canvas.addEventListener('mousedown', function(event){
+			var mousePosX = event.pageX - 10,
+				mousePosY = event.pageY - 10;
+			circle.x = mousePosX;
+			circle.y = mousePosY;
+		});
+
+		// Collision events
+		// Track score and reflection off of the net
+		hoopCollide = netCollision(hoop.backX, hoop.y2, hoop.y1)
+		netTopTouch = netCollision(hoop.backX, hoop.y1, hoop.y1)
+	    if ((hoopCollide.fx > hoop.x1 && hoopCollide.fy > hoop.y1) &&
+	    	(hoopCollide.fx < hoop.x2 && hoopCollide.fy < hoop.y2) ||
+	    	(hoopCollide.gx > hoop.x1 && hoopCollide.gy > hoop.y1) &&
+	    	(hoopCollide.gx < hoop.x2 && hoopCollide.gy < hoop.y2))
+	    {
+			circle.vx = -Math.abs(circle.vx);
+		 	circle.vy = -Math.abs(circle.vy);
+		}
+	    if ((netTopTouch.fx > hoop.x1) &&
+	    	(netTopTouch.fx < hoop.backX) &&
+	    	(netTopTouch.gx > hoop.x1) &&
+	    	(netTopTouch.gx < hoop.backX))
+	    {
+	    	netTop = true;
+	    }
+	    if (netTop) {
+			netBotTouch = netCollision(hoop.backX, hoop.y2, hoop.y2);
+		    if ((netBotTouch.fx > hoop.x2) &&
+		    	(netBotTouch.fx < hoop.backX) &&
+		    	(netBotTouch.gx > hoop.x2) &&
+		    	(netBotTouch.gx < hoop.backX))
+		    {
+				points += 1;
+				console.log(points);
+				netTop = false;
+		    }
+	    }
 
 		requestAnimationFrame(executeFrame);
 	}
 
-	function hoopCollide() {
+	function netCollision(endX, bottomY, topY) {
+		var fx, fy, gx, gy;
 		// compute the euclidean distance between A and B
-		var lab = Math.sqrt( Math.pow((hoop.x2 - hoop.x1),2) + Math.pow((hoop.y2 - hoop.y1),2) );
+		var lab = Math.sqrt( Math.pow((endX - hoop.x1),2) + Math.pow((bottomY - topY),2) );
 
 		// compute the direction vector D from A to B
-		var dx = (hoop.x2 - hoop.x1) / lab;
-		var dy = (hoop.y2 - hoop.y1) / lab;
+		var dx = (endX - hoop.x1) / lab;
+		var dy = (bottomY - topY) / lab;
 
 		// Now the line equation is x = Dx*t + Ax, y = Dy*t + Ay with 0 <= t <= 1.
 
 		// compute the value t of the closest point to the circle center (Cx, Cy)
-		var t = dx * (circle.x - hoop.x1) + dy * (circle.y - hoop.y1);
+		var t = dx * (circle.x - hoop.x1) + dy * (circle.y - topY);
 
 		// This is the projection of C on the line from A to B.
 
 		// compute the coordinates of the point E on line and closest to C
 		var ex = t * dx + hoop.x1;
-		var ey = t * dy + hoop.y1;
+		var ey = t * dy + topY;
 
 		// circle.x2 = ex;
 		// circle.y2 = ey;
@@ -210,40 +233,42 @@
 		    var dt = Math.sqrt( Math.pow((circle.radius),2) - Math.pow((lec),2) );
 
 		    // compute first intersection point on the x (fx) and y (fy) axis
-		    var fx = (t - dt) * dx + hoop.x1;
-		    var fy = (t - dt) * dy + hoop.y1;
+		    fx = (t - dt) * dx + hoop.x1;
+		    fy = (t - dt) * dy + topY;
 
 		    // compute second intersection point on the x (gx) and y (gy) axis
-		    var gx = (t + dt) * dx + hoop.x1;
-		    var gy = (t + dt) * dy + hoop.y1;
-
-		    if ((fx > hoop.x1 && fy > hoop.y1) && (fx < hoop.x2 && fy < hoop.y2) || (gx > hoop.x1 && gy > hoop.y1) && (gx < hoop.x2 && gy < hoop.y2)) {
-				circle.vx = -Math.abs(circle.vx);
-			 	circle.vy = -Math.abs(circle.vy);
-			 }
+		    gx = (t + dt) * dx + hoop.x1;
+		    gy = (t + dt) * dy + topY;
 		}
 		// else test if the line is tangent to circle
 		else if( lec == circle.radius ) {
 		    // tangent point to circle is E
-		    console.log('line is tangent to circle');
 		}
 		else {
 		    // line doesn't touch circle
 		}
-	}
+
+	    var collisionPoints = {
+	    	fx: fx,
+	    	fy: fy,
+	    	gx: gx,
+	    	gy: gy,
+	    };
+	    return collisionPoints;
+	};
 
 	function speedThrottle() {
 		// Set a maximum speed
-		if(circle.vx > 20) {
+		if(circle.vx > 8) {
 			circle.vx = maxSpeed + circle.vx / maxSpeed;
 		}
-		if(circle.vx < -20) {
+		if(circle.vx < -8) {
 			circle.vx /= -maxSpeed - circle.vx / maxSpeed;
 		}
-		if(circle.vy > 20) {
+		if(circle.vy > 8) {
 			circle.vy /= maxSpeed + circle.vy / maxSpeed;
 		}
-		if(circle.vy < -20) {
+		if(circle.vy < -8) {
 			circle.vy /= -maxSpeed - circle.vy / maxSpeed;
 		}
 	}
