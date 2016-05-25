@@ -8,6 +8,24 @@
 		maxSpeed = 5,
 		offset = 200;
 
+	var floor = {
+		v: {x: 0, y: 0},
+		mass: 5.9722 * Math.pow(10, 24)
+	}
+
+	function collide() {
+		circle.vy = (circle.elasticity * floor.mass * -circle.vy + circle.mass * circle.vy) / (circle.mass + floor.mass);
+	}
+
+	function update(obj, dt) {
+		// over-simplified collision detection
+		// only consider the floor for simplicity
+		if ((circle.y + circle.radius) > canvas.height - offset) { 
+			circle.y = canvas.height - offset - circle.radius;
+			collide();
+		}
+	}
+
 	function getRandomInt(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
@@ -24,6 +42,8 @@
 		fillColour: 'rgba(0,0,0,0.5)',
 		strokeColour: '#000',
 		radius: 20,
+		mass: 10,
+		elasticity: 0.5,
 
 		draw: function() {
 			c.beginPath();
@@ -84,9 +104,9 @@
 			circle.vy = Math.abs(circle.vy);
 		}
 		// Bottom border
-		if (circle.y + circle.radius > canvas.height - offset) {
+		if ((circle.y + circle.radius) > canvas.height - offset) { 
 			circle.y = canvas.height - offset - circle.radius;
-			circle.vy = -Math.abs(circle.vy);
+			collide();
 		}
 		// Left border
 		if (circle.x - circle.radius < offset) {
@@ -137,11 +157,10 @@
 				ballMinY = circle.y - circle.radius,
 				ballMaxX = circle.x + circle.radius,
 				ballMaxY = circle.y + circle.radius;
+			var dx = mousePosX - circle.x,
+				dy = mousePosY - circle.y;
 
 			if (mousePosX <= ballMaxX && mousePosX >= ballMinX && mousePosY <= ballMaxY && mousePosY >= ballMinY) {
-
-			var dx = mousePosX - (circle.x),
-				dy = mousePosY - (circle.y);
 				circle.vx += dx * pullStrength;
 				circle.vy += dy * pullStrength;
 				speedThrottle();
