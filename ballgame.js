@@ -8,7 +8,7 @@
 		dampening = 0.99,
 		pullStrength = -0.002,
 		maxSpeed = 5,
-		offset = 200;
+		offset = 100;
 
 	var floor = {
 		v: {x: 0, y: 0},
@@ -17,15 +17,6 @@
 
 	function collide() {
 		circle.vy = (circle.elasticity * floor.mass * -circle.vy + circle.mass * circle.vy) / (circle.mass + floor.mass);
-	}
-
-	function update(obj, dt) {
-		// over-simplified collision detection
-		// only consider the floor for simplicity
-		if ((circle.y + circle.radius) > canvas.height - offset) { 
-			circle.y = canvas.height - offset - circle.radius;
-			collide();
-		}
 	}
 
 	function getRandomInt(min, max) {
@@ -45,7 +36,7 @@
 		strokeColour: '#000',
 		radius: 20,
 		mass: 10,
-		elasticity: 0.5,
+		elasticity: 0.8,
 
 		draw: function() {
 			c.beginPath();
@@ -67,8 +58,11 @@
 		y1: 250,
 		x2: 520,
 		y2: 300,
-		backX: 600,
+		backX: 700,
 		lineWidth: 5,
+		angle: function() {
+			return Math.atan((this.x2 - this.x1) / (this.y2 - this.y1))
+		},
 		draw: function() {
 			c.beginPath();
 			c.moveTo(this.x1, this.y1);
@@ -78,8 +72,8 @@
 			c.strokeStyle = '#000';
 			c.stroke();
 			c.beginPath();
-			c.moveTo(600, 300);
-			c.lineTo(600, 250);
+			c.moveTo(this.backX, 300);
+			c.lineTo(this.backX, 250);
 			c.stroke();
 		},
 		net: function(){
@@ -168,14 +162,32 @@
 
 		// Collision events
 		// Track score and reflection off of the net
-		hoopCollide = netCollision(hoop.backX, hoop.y2, hoop.y1)
+		hoopCollide = netCollision(hoop.x2, hoop.y2, hoop.y1)
 		netTopTouch = netCollision(hoop.backX, hoop.y1, hoop.y1)
 	    if ((hoopCollide.fx > hoop.x1 && hoopCollide.fy > hoop.y1) &&
 	    	(hoopCollide.fx < hoop.x2 && hoopCollide.fy < hoop.y2) ||
 	    	(hoopCollide.gx > hoop.x1 && hoopCollide.gy > hoop.y1) &&
 	    	(hoopCollide.gx < hoop.x2 && hoopCollide.gy < hoop.y2))
 	    {
-			circle.vx = -Math.abs(circle.vx);
+	    	////////////////////////////////
+			// Click on line (both sides) to
+			// see bug
+	    	////////////////////////////////
+	    	if (circle.x < hoopCollide.ex) {
+	    		circle.x = Math.abs(hoopCollide.ex - circle.radius);
+	    	}
+	    	if (circle.x > hoopCollide.ex) {
+	    		circle.x = Math.abs(hoopCollide.ex + circle.radius - 2);
+	    	}
+	    	if (circle.y < hoopCollide.ey) {
+	    		circle.y = Math.abs(hoopCollide.ey - circle.radius);
+	    	}
+	    	if (circle.y > hoopCollide.ey) {
+	    		circle.y = Math.abs(hoopCollide.ey + circle.radius);
+	    	}
+	    	// Try to figure out how angles work:
+	    	// http://math.stackexchange.com/questions/1844/how-to-calculate-reflected-light-angle
+			circle.vx = Math.abs(circle.vx) * hoop.angle();
 		 	circle.vy = -Math.abs(circle.vy);
 		}
 	    if ((netTopTouch.fx > hoop.x1) &&
@@ -249,6 +261,8 @@
 		}
 
 	    var collisionPoints = {
+	    	ex: ex,
+	    	ey: ey,
 	    	fx: fx,
 	    	fy: fy,
 	    	gx: gx,
@@ -259,16 +273,16 @@
 
 	function speedThrottle() {
 		// Set a maximum speed
-		if(circle.vx > 8) {
+		if(circle.vx > 10) {
 			circle.vx = maxSpeed + circle.vx / maxSpeed;
 		}
-		if(circle.vx < -8) {
+		if(circle.vx < -10) {
 			circle.vx /= -maxSpeed - circle.vx / maxSpeed;
 		}
-		if(circle.vy > 8) {
+		if(circle.vy > 10) {
 			circle.vy /= maxSpeed + circle.vy / maxSpeed;
 		}
-		if(circle.vy < -8) {
+		if(circle.vy < -10) {
 			circle.vy /= -maxSpeed - circle.vy / maxSpeed;
 		}
 	}
