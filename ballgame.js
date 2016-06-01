@@ -173,22 +173,44 @@
 			// Click on line (both sides) to
 			// see bug
 	    	////////////////////////////////
-	    	if (circle.x < hoopCollide.ex) {
-	    		circle.x = Math.abs(hoopCollide.ex - circle.radius);
-	    	}
-	    	if (circle.x > hoopCollide.ex) {
-	    		circle.x = Math.abs(hoopCollide.ex + circle.radius - 2);
-	    	}
-	    	if (circle.y < hoopCollide.ey) {
-	    		circle.y = Math.abs(hoopCollide.ey - circle.radius);
-	    	}
-	    	if (circle.y > hoopCollide.ey) {
-	    		circle.y = Math.abs(hoopCollide.ey + circle.radius);
-	    	}
+	    // 	if (circle.x <= hoopCollide.ex && circle.y >= hoopCollide.ey && (circle.y - circle.radius) <= hoop.y2 ) {
+		   //  	// Collide on left of hoop
+	    // 		circle.y = Math.abs(hoopCollide.ey + circle.radius);
+		 		// circle.vy = circle.vx;
+		 		// circle.vx = -Math.abs(circle.vx);
+	    // 	} else if (circle.x >= hoopCollide.ex && circle.y <= hoopCollide.ey && (circle.y - circle.radius) >= hoop.y1) {
+	    // 		// Collide on right of hoop
+	    // 		circle.y = Math.abs(hoopCollide.ey - circle.radius);
+		 		// circle.vx = circle.vy;
+		 		// circle.vy = -Math.abs(circle.vy);
+	    // 	} else {
+	    // 		circle.vy = -Math.abs(circle.vy);
+	    // 	}
 	    	// Try to figure out how angles work:
 	    	// http://math.stackexchange.com/questions/1844/how-to-calculate-reflected-light-angle
-			circle.vx = Math.abs(circle.vx) * hoop.angle();
-		 	circle.vy = -Math.abs(circle.vy);
+
+	    	if (circle.x <= hoopCollide.ex && circle.y >= hoopCollide.ey) {
+		    	// Collide on left of hoop
+	    		circle.y = Math.abs(hoopCollide.ey + circle.radius);
+		 		circle.vy = circle.vx;
+		 		circle.vx = -Math.abs(circle.vx);
+	    	}
+	    	if (circle.x >= hoopCollide.ex && circle.y <= hoopCollide.ey) {
+	    		// Collide on right of hoop
+	    		circle.y = Math.abs(hoopCollide.ey - circle.radius);
+		 		circle.vx = circle.vy;
+		 		circle.vy = -Math.abs(circle.vy);
+	    	}
+	    	if ( (circle.y - circle.radius) >= (hoop.y2 - 3)) {
+	    		// Collide on bottom of hoop
+	    		circle.y = Math.abs(hoopCollide.ey + circle.radius);
+	    		circle.vy = -Math.abs(circle.vy);
+	    	}
+	    	if ( (circle.y + circle.radius) <= (hoop.y1 + 3)) {
+	    		// Collide on top of hoop
+	    		circle.y = Math.abs(hoopCollide.ey - circle.radius);
+	    		circle.vy = -Math.abs(circle.vy);
+	    	}
 		}
 	    if ((netTopTouch.fx > hoop.x1) &&
 	    	(netTopTouch.fx < hoop.backX) &&
@@ -263,6 +285,7 @@
 	    var collisionPoints = {
 	    	ex: ex,
 	    	ey: ey,
+	    	lec: lec,
 	    	fx: fx,
 	    	fy: fy,
 	    	gx: gx,
