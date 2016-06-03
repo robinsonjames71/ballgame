@@ -1,8 +1,17 @@
-(function(){
-	var netTop = false,
-		points = 0;
+// Ideas: change game on point
+// Shoot through hoop
+// Shoot through bucket
+// Turn bucket sideways
+////////////////////////////////
+// Click on line (both sides) to
+// see bug
+////////////////////////////////
+// Try to figure out how angles work:
+// http://math.stackexchange.com/questions/1844/how-to-calculate-reflected-light-angle
+// Vector platformer (endless runner):
+// http://codepen.io/jordanranson/pen/ckIso
 
-	var offsetPos = document.getElementById('ball').getBoundingClientRect();
+(function(){
 
 	var canvas = document.getElementById("ball");
 		c = canvas.getContext('2d'),
@@ -10,37 +19,40 @@
 		dampening = 0.99,
 		pullStrength = -0.002,
 		maxSpeed = 5,
-		offset = 100;
+		offsetPos = document.getElementById('ball').getBoundingClientRect(),
+		netTop = false,
+		points = 0;
 
+	// Images for animation
+	var ball = new Image();
+	ball.src = 'imgs/basketball_small.png';
+
+	var netImg = new Image();
+	netImg.src = 'imgs/net_hoop-small.png';
+
+	// Physics Objects
 	var floor = {
 		v: {x: 0, y: 0},
 		mass: 5.9722 * Math.pow(10, 24)
 	}
 
-	function collide() {
-		circle.vy = (circle.elasticity * floor.mass * -circle.vy + circle.mass * circle.vy) / (circle.mass + floor.mass);
-	}
-
-	function getRandomInt(min, max) {
-		return Math.floor(Math.random() * (max - min + 1)) + min;
-	}
-
 	var circle = {
 		x: getRandomInt(200, 600),
 		y: getRandomInt(20, 200),
-		x2: 0,
-		y2: 0,
 		// (vx, vy) = Velocity vector
 		vx: 0,
 		vy: 0,
 		direction: 1,
 		rotate: 1,
-		lineWidth: 2,
-		fillColour: 'rgba(0,0,0,0.5)',
-		strokeColour: '#000',
 		radius: 25,
 		mass: 10,
 		elasticity: 0.8,
+		// Attributes used for testing
+		x2: 0,
+		y2: 0,
+		lineWidth: 2,
+		fillColour: 'rgba(0,0,0,0.5)',
+		strokeColour: '#000',
 
 		draw: function() {
 			c.save();
@@ -63,23 +75,23 @@
 			c.stroke();
 		}
 	};
-	var ball = new Image();
-	ball.src = 'imgs/basketball_small.png';
 
-	var netImg = new Image();
-	netImg.src = 'imgs/net_hoop-small.png';
 	var hoop = {
 		x1: 800,
 		y1: 200,
-		x2: 825,
-		y2: 310,
+		x2: 821,
+		y2: 240,
+		x3: 825,
+		y3: 310,
 		backX: 910,
-		backX2: 885,
-		lineWidth: 5,
+		backX2: 889,
+		backX3: 885,
+		lineWidth: 3,
 		drawTest: function() {
 			c.beginPath();
 			c.moveTo(this.x1, this.y1);
 			c.lineTo(this.x2, this.y2);
+			c.lineTo(this.x3, this.y3);
 			c.lineWidth = this.lineWidth;
 			c.lineCap = "round";
 			c.strokeStyle = '#ff0000';
@@ -87,6 +99,7 @@
 			c.beginPath();
 			c.moveTo(this.backX, this.y1);
 			c.lineTo(this.backX2, this.y2);
+			c.lineTo(this.backX3, this.y3);
 			c.stroke();
 			c.beginPath();
 			c.moveTo(this.x1, this.y1);
@@ -96,8 +109,8 @@
 			c.strokeStyle = '#7ec0ee';
 			c.stroke();
 			c.beginPath();
-			c.moveTo(this.x2, this.y2);
-			c.lineTo(this.backX2, this.y2);
+			c.moveTo(this.x3, this.y3);
+			c.lineTo(this.backX3, this.y3);
 			c.stroke();
 		},
 		net: function(){
@@ -106,6 +119,11 @@
 			c.fillStyle = '#7ec0ee';
 			c.fillText('Score: ' + points, 10, 50);
 		}
+	}
+
+	// Animation and physics functions
+	function getRandomInt(min, max) {
+		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
 
 	function executeFrame(){
@@ -118,16 +136,15 @@
 
 		// Increment Gravity
 		circle.vy += gravity;
-		circle.vx += 0.0000001;
 
 		// Slow down velocity
 		circle.vx *= dampening;
 		circle.vy *= dampening;
 
-		var direction = circle.vx > 0 ? 1 : -1;
-		// Slow down rotating
-		circle.direction *= dampening;
 		// Rotate ball
+		// Set direction and Slow down rotating
+		var direction = circle.vx > 0 ? 1 : -1;
+		circle.direction *= dampening;
 		circle.rotate += circle.direction * direction;
 
 		// Top border
@@ -138,7 +155,7 @@
 		// Bottom border
 		if ((circle.y + circle.radius) > canvas.height - offsetPos.top) { 
 			circle.y = canvas.height - offsetPos.top - circle.radius;
-			collide();
+			floorCollision();
 		}
 		// Left border
 		if (circle.x - circle.radius < 0) {
@@ -151,73 +168,21 @@
 			circle.vx = -Math.abs(circle.vx);
 		}
 
-		c.clearRect(0, 0, canvas.width, canvas.height);
-
-		// Hoop
-		circle.draw();
-		hoop.net();
-		hoop.drawTest();
-
-		canvas.addEventListener('mousemove', function(event){
-			var mousePosX = event.pageX,
-				mousePosY = event.pageY - 10;
-			var ballMinX = circle.x - circle.radius + offsetPos.left,
-				ballMinY = circle.y - circle.radius - offsetPos.top,
-				ballMaxX = circle.x + circle.radius + offsetPos.left,
-				ballMaxY = circle.y + circle.radius - offsetPos.top;
-			var dx = mousePosX - circle.x - offsetPos.left,
-				dy = mousePosY - circle.y - offsetPos.top;
-
-			if (mousePosX <= ballMaxX && mousePosX >= ballMinX && mousePosY <= ballMaxY && mousePosY >= ballMinY) {
-				circle.vx += dx * pullStrength;
-				circle.vy += dy * pullStrength;
-				circle.direction = getRandomInt(5, 30);
-				speedThrottle();
-			}
-		});
-
-		// Test ball position event
-		canvas.addEventListener('mousedown', function(event){
-			var ballMinX = circle.x - circle.radius + offsetPos.left,
-				ballMinY = circle.y - circle.radius - offsetPos.top,
-				ballMaxX = circle.x + circle.radius + offsetPos.left,
-				ballMaxY = circle.y + circle.radius - offsetPos.top;
-			var mousePosX = event.pageX,
-				mousePosY = event.pageY - offsetPos.top;
-				// console.log('mousePosX: ' + mousePosX);
-				// console.log('ballMinX: ' + ballMinX);
-				// console.log('ballMaxX: ' + ballMaxX);
-			circle.x = mousePosX - offsetPos.left;
-			circle.y = mousePosY;
-		});
-
-	    	// Ideas: change game on point
-	    	// Shoot through hoop
-	    	// Shoot through bucket
-	    	// Turn bucket sideways
-	    	////////////////////////////////
-			// Click on line (both sides) to
-			// see bug
-	    	////////////////////////////////
-	    	// Try to figure out how angles work:
-	    	// http://math.stackexchange.com/questions/1844/how-to-calculate-reflected-light-angle
-	    	// Vector platformer (endless runner):
-	    	// http://codepen.io/jordanranson/pen/ckIso
-
 		// Collision events
-		// Track score and reflection off of the net
-		var hoopCollide = netCollision(hoop.x1, hoop.x2, hoop.y2, hoop.y1);
-		var backhoopCollide = netCollision(hoop.backX, hoop.backX2, hoop.y2, hoop.y1);
-		var netTopTouch = netCollision(hoop.x1, hoop.backX, hoop.y1, hoop.y1);
-
+		// Reflection off of the net
 		var collisionDetect = [];
-		collisionDetect.push(hoopCollide, backhoopCollide);
+			collisionDetect[0] = netCollision(hoop.x1, hoop.x2, hoop.y2, hoop.y1),
+			collisionDetect[1] = netCollision(hoop.x2, hoop.x3, hoop.y3, hoop.y2),
+			collisionDetect[2] = netCollision(hoop.backX, hoop.backX2, hoop.y2, hoop.y1),
+			collisionDetect[3] = netCollision(hoop.backX2, hoop.backX3, hoop.y3, hoop.y2);
+
 		for (i = 0; i < collisionDetect.length; i++) {
 		    if ((collisionDetect[i].fx || collisionDetect[i].fy) ||
 		    	(collisionDetect[i].gx || collisionDetect[i].gy ))
 		    {
 		    	// lineAngle either positive or negative number
 		    	var lineAngle = Math.atan((collisionDetect[i].endX - collisionDetect[i].startX) / (collisionDetect[i].bottomY - collisionDetect[i].topY));
+		    	// console.log('lineAngle percentage: ' + lineAngle/(Math.PI / 2));
     			var horizVel = circle.vx;
     			var vertVel = circle.vy;
     			// Top left to bottom right line
@@ -275,30 +240,9 @@
 		    	}
 		    }
 		}
-	    // if ((hoopCollide.fx > hoop.x1 && hoopCollide.fy > hoop.y1) &&
-	    // 	(hoopCollide.fx < hoop.x2 && hoopCollide.fy < hoop.y2) ||
-	    // 	(hoopCollide.gx > hoop.x1 && hoopCollide.gy > hoop.y1) &&
-	    // 	(hoopCollide.gx < hoop.x2 && hoopCollide.gy < hoop.y2))
-	    // {
-	    // 	if ( (circle.y + circle.radius) <= (hoop.y1 + 3)) {
-	    // 		// Collide on top of hoop
-	    // 		circle.vy = -Math.abs(circle.vy);
-	    // 	} else if (circle.x <= hoopCollide.ex && circle.y >= hoopCollide.ey) {
-		   //  	// Collide on left of hoop
-		 		// circle.vy = circle.vx * dampening;
-		 		// circle.vx = -Math.abs(circle.vx);
-	    // 	}
-	    // 	if ( (circle.y - circle.radius) >= (hoop.y2 - 3)) {
-	    // 		// Collide on bottom of hoop
-	    // 		circle.y = Math.abs(hoopCollide.ey + circle.radius/2);
-	    // 		circle.vy = -Math.abs(circle.vy);
-	    // 	} else if (circle.x >= hoopCollide.ex && circle.y <= hoopCollide.ey) {
-	    // 		// Collide on right of hoop
-	    // 		circle.x = circle.vy < 0 ? Math.abs(hoopCollide.ex + circle.radius) : circle.x;
-		 		// circle.vx = circle.vy * 0.7;
-		 		// circle.vy = circle.vy < 0 ? circle.vy * 0.1 : -circle.vy * 0.1;
-	    // 	}
-		// }
+
+		// Scoring function - ball has to go through top and out bottom to score
+		var netTopTouch = netCollision(hoop.x1, hoop.backX, hoop.y1, hoop.y1);
 	    if ((netTopTouch.fx > hoop.x1) &&
 	    	(netTopTouch.fx < hoop.backX) &&
 	    	(netTopTouch.gx > hoop.x1) &&
@@ -307,19 +251,63 @@
 	    	netTop = true;
 	    }
 	    if (netTop) {
-			netBotTouch = netCollision(hoop.x2, hoop.backX2, hoop.y2, hoop.y2);
+			netBotTouch = netCollision(hoop.x3, hoop.backX3, hoop.y3, hoop.y3);
 		    if ((netBotTouch.fx > hoop.x2) &&
 		    	(netBotTouch.fx < hoop.backX2) &&
 		    	(netBotTouch.gx > hoop.x2) &&
 		    	(netBotTouch.gx < hoop.backX2))
 		    {
 				points += 1;
-				console.log(points);
 				netTop = false;
 		    }
 	    }
 
+	    // Draw to canvas
+		c.clearRect(0, 0, canvas.width, canvas.height);
+
+		circle.draw();
+		hoop.net();
+
+		canvas.addEventListener('mousemove', function(event){
+			var mousePosX = event.pageX,
+				mousePosY = event.pageY - 10;
+			var ballMinX = circle.x - circle.radius + offsetPos.left,
+				ballMinY = circle.y - circle.radius - offsetPos.top,
+				ballMaxX = circle.x + circle.radius + offsetPos.left,
+				ballMaxY = circle.y + circle.radius - offsetPos.top;
+			var dx = mousePosX - circle.x - offsetPos.left,
+				dy = mousePosY - circle.y - offsetPos.top;
+
+			if (mousePosX <= ballMaxX && mousePosX >= ballMinX && mousePosY <= ballMaxY && mousePosY >= ballMinY) {
+				circle.vx += dx * pullStrength;
+				circle.vy += dy * pullStrength;
+				circle.direction = getRandomInt(5, 30);
+				speedThrottle();
+			}
+		});
+
+		// Testing Section
+		// hoop.drawTest();
+		// Test ball position event
+		// canvas.addEventListener('mousedown', function(event){
+		// 	var ballMinX = circle.x - circle.radius + offsetPos.left,
+		// 		ballMinY = circle.y - circle.radius - offsetPos.top,
+		// 		ballMaxX = circle.x + circle.radius + offsetPos.left,
+		// 		ballMaxY = circle.y + circle.radius - offsetPos.top;
+		// 	var mousePosX = event.pageX,
+		// 		mousePosY = event.pageY - offsetPos.top;
+		// 		// console.log('mousePosX: ' + mousePosX);
+		// 		// console.log('ballMinX: ' + ballMinX);
+		// 		// console.log('ballMaxX: ' + ballMaxX);
+		// 	circle.x = mousePosX - offsetPos.left;
+		// 	circle.y = mousePosY;
+		// });
+
 		requestAnimationFrame(executeFrame);
+	}
+
+	function floorCollision() {
+		circle.vy = (circle.elasticity * floor.mass * -circle.vy + circle.mass * circle.vy) / (circle.mass + floor.mass);
 	}
 
 	function netCollision(startX, endX, bottomY, topY) {
@@ -372,7 +360,6 @@
 	    var collisionPoints = {
 	    	ex: ex,
 	    	ey: ey,
-	    	lec: lec,
 	    	fx: fx,
 	    	fy: fy,
 	    	gx: gx,
