@@ -2,6 +2,8 @@
 	var netTop = false,
 		points = 0;
 
+	var offsetPos = document.getElementById('ball').getBoundingClientRect();
+
 	var canvas = document.getElementById("ball");
 		c = canvas.getContext('2d'),
 		gravity = 0.1,
@@ -25,7 +27,7 @@
 
 	var circle = {
 		x: getRandomInt(200, 600),
-		y: getRandomInt(200, 600),
+		y: getRandomInt(20, 200),
 		x2: 0,
 		y2: 0,
 		// (vx, vy) = Velocity vector
@@ -62,17 +64,17 @@
 		}
 	};
 	var ball = new Image();
-	ball.src = 'imgs/ball.gif';
+	ball.src = 'imgs/basketball_small.png';
 
 	var netImg = new Image();
-	netImg.src = 'imgs/hoop-net.svg';
+	netImg.src = 'imgs/net_hoop-small.png';
 	var hoop = {
-		x1: 600,
-		y1: 250,
-		x2: 620,
-		y2: 340,
-		backX: 700,
-		backX2: 680,
+		x1: 800,
+		y1: 200,
+		x2: 825,
+		y2: 310,
+		backX: 910,
+		backX2: 885,
 		lineWidth: 5,
 		drawTest: function() {
 			c.beginPath();
@@ -80,7 +82,7 @@
 			c.lineTo(this.x2, this.y2);
 			c.lineWidth = this.lineWidth;
 			c.lineCap = "round";
-			c.strokeStyle = '#000';
+			c.strokeStyle = '#ff0000';
 			c.stroke();
 			c.beginPath();
 			c.moveTo(this.backX, this.y1);
@@ -99,7 +101,7 @@
 			c.stroke();
 		},
 		net: function(){
-			c.drawImage(netImg, this.x1, this.y1 - 10, 100, 100);
+			c.drawImage(netImg, this.x1, this.y1, 110, 110);
 			c.font = '30px Arial';
 			c.fillStyle = '#7ec0ee';
 			c.fillText('Score: ' + points, 10, 50);
@@ -129,23 +131,23 @@
 		circle.rotate += circle.direction * direction;
 
 		// Top border
-		if (circle.y + circle.radius < offset) {
-			circle.y = offset - circle.radius;
+		if (circle.y - circle.radius < offsetPos.top) {
+			circle.y = offsetPos.top + circle.radius;
 			circle.vy = Math.abs(circle.vy);
 		}
 		// Bottom border
-		if ((circle.y + circle.radius) > canvas.height - offset) { 
-			circle.y = canvas.height - offset - circle.radius;
+		if ((circle.y + circle.radius) > canvas.height - offsetPos.top) { 
+			circle.y = canvas.height - offsetPos.top - circle.radius;
 			collide();
 		}
 		// Left border
-		if (circle.x - circle.radius < offset) {
-			circle.x = offset + circle.radius;
+		if (circle.x - circle.radius < 0) {
+			circle.x = circle.radius;
 			circle.vx = Math.abs(circle.vx);
 		}
 		// Right border
-		if (circle.x + circle.radius > canvas.width - offset) {
-			circle.x = canvas.width - offset - circle.radius;
+		if (circle.x + circle.radius > canvas.width) {
+			circle.x = canvas.width - circle.radius;
 			circle.vx = -Math.abs(circle.vx);
 		}
 
@@ -154,17 +156,17 @@
 		// Hoop
 		circle.draw();
 		hoop.net();
-		// hoop.drawTest();
+		hoop.drawTest();
 
 		canvas.addEventListener('mousemove', function(event){
-			var mousePosX = event.pageX - 10,
+			var mousePosX = event.pageX,
 				mousePosY = event.pageY - 10;
-			var ballMinX = circle.x - circle.radius,
-				ballMinY = circle.y - circle.radius,
-				ballMaxX = circle.x + circle.radius,
-				ballMaxY = circle.y + circle.radius;
-			var dx = mousePosX - circle.x,
-				dy = mousePosY - circle.y;
+			var ballMinX = circle.x - circle.radius + offsetPos.left,
+				ballMinY = circle.y - circle.radius - offsetPos.top,
+				ballMaxX = circle.x + circle.radius + offsetPos.left,
+				ballMaxY = circle.y + circle.radius - offsetPos.top;
+			var dx = mousePosX - circle.x - offsetPos.left,
+				dy = mousePosY - circle.y - offsetPos.top;
 
 			if (mousePosX <= ballMaxX && mousePosX >= ballMinX && mousePosY <= ballMaxY && mousePosY >= ballMinY) {
 				circle.vx += dx * pullStrength;
@@ -176,9 +178,16 @@
 
 		// Test ball position event
 		canvas.addEventListener('mousedown', function(event){
-			var mousePosX = event.pageX - 10,
-				mousePosY = event.pageY - 10;
-			circle.x = mousePosX;
+			var ballMinX = circle.x - circle.radius + offsetPos.left,
+				ballMinY = circle.y - circle.radius - offsetPos.top,
+				ballMaxX = circle.x + circle.radius + offsetPos.left,
+				ballMaxY = circle.y + circle.radius - offsetPos.top;
+			var mousePosX = event.pageX,
+				mousePosY = event.pageY - offsetPos.top;
+				// console.log('mousePosX: ' + mousePosX);
+				// console.log('ballMinX: ' + ballMinX);
+				// console.log('ballMaxX: ' + ballMaxX);
+			circle.x = mousePosX - offsetPos.left;
 			circle.y = mousePosY;
 		});
 
@@ -209,15 +218,11 @@
 		    {
 		    	// lineAngle either positive or negative number
 		    	var lineAngle = Math.atan((collisionDetect[i].endX - collisionDetect[i].startX) / (collisionDetect[i].bottomY - collisionDetect[i].topY));
-		    	// console.log('collisionDetect[i].startX: ' + collisionDetect[i].startX);
-		    	// console.log('collisionDetect[i].endX: ' + collisionDetect[i].endX);
-		    	// console.log('collisionDetect[i].topY: ' + collisionDetect[i].topY);
-		    	// console.log('collisionDetect[i].bottomY: ' + collisionDetect[i].bottomY);
-		    	// console.log('collisionDetect[i].fx: ' + collisionDetect[i].fx);
-		    	// console.log('collisionDetect[i].fy: ' + collisionDetect[i].fy);
-		    	// console.log('collisionDetect[i].gx: ' + collisionDetect[i].gx);
-		    	// console.log('collisionDetect[i].gy: ' + collisionDetect[i].gy);
+    			var horizVel = circle.vx;
+    			var vertVel = circle.vy;
+    			// Top left to bottom right line
 		    	if (lineAngle > 0) {
+		    		// If any part of the ball touches the line between the hoop coordinates
 		    		if ((collisionDetect[i].fx > collisionDetect[i].startX && collisionDetect[i].fy > collisionDetect[i].topY) &&
 				    	(collisionDetect[i].fx < collisionDetect[i].endX && collisionDetect[i].fy < collisionDetect[i].bottomY) ||
 				    	(collisionDetect[i].gx > collisionDetect[i].startX && collisionDetect[i].gy > collisionDetect[i].topY) &&
@@ -228,24 +233,22 @@
 				    		circle.vy = -Math.abs(circle.vy);
 				    	} else if (circle.x <= collisionDetect[i].ex && circle.y >= collisionDetect[i].ey) {
 					    	// Collide on left of line
-					 		circle.vy = circle.vx * dampening;
-					 		circle.vx = -Math.abs(circle.vx);
+				    		circle.vy = horizVel;
+				    		circle.vx = -vertVel;
 				    	}
-				    	if ( (circle.y - circle.radius) >= (collisionDetect[i].bottomY - 3)) {
-				    		// Collide on bottom of line
-				    		circle.y = Math.abs(collisionDetect[i].ey + circle.radius/2);
-				    		circle.vy = -Math.abs(circle.vy);
-				    	} else if (circle.x >= collisionDetect[i].ex && circle.y <= collisionDetect[i].ey) {
+				    	if (circle.x >= collisionDetect[i].ex && circle.y <= collisionDetect[i].ey) {
 				    		// Collide on right of line
 				    		// If the ball is going up when it collides with the right of the line
 				    		// then displace the ball
 				    		circle.x = circle.vy < 0 ? Math.abs(collisionDetect[i].ex + circle.radius) : circle.x;
-					 		circle.vx = circle.vy * 0.7;
-					 		circle.vy = circle.vy < 0 ? circle.vy * 0.1 : -circle.vy * 0.1;
+				    		circle.vy = -horizVel;
+				    		circle.vx = vertVel * 0.7;
 				    	}
 		    		}
 		    	}
+    			// Top right to bottom left line
 		    	else {
+		    		// If any part of the ball touches the line between the hoop coordinates
 		    		if ((collisionDetect[i].fx < collisionDetect[i].startX && collisionDetect[i].fy > collisionDetect[i].topY) &&
 				    	(collisionDetect[i].fx > collisionDetect[i].endX && collisionDetect[i].fy < collisionDetect[i].bottomY) ||
 				    	(collisionDetect[i].gx < collisionDetect[i].startX && collisionDetect[i].gy > collisionDetect[i].topY) &&
@@ -254,22 +257,19 @@
 		    			if ( (circle.y + circle.radius) <= (collisionDetect[i].topY + 3)) {
 				    		// Collide on top of line
 				    		circle.vy = -Math.abs(circle.vy);
-				    	} else if (circle.x >= collisionDetect[i].ex && circle.y >= collisionDetect[i].ey) {
+				    	} else if ((circle.x ) <= collisionDetect[i].ex && (circle.y + circle.radius) >= collisionDetect[i].ey) {
 					    	// Collide on left of line
 				    		// If the ball is going up when it collides with the left of the line
 				    		// then displace the ball
 				    		circle.x = circle.vy < 0 ? Math.abs(collisionDetect[i].ex - circle.radius) : circle.x;
-					 		circle.vx = circle.vy * 0.7;
-					 		circle.vy = circle.vy < 0 ? -circle.vy * 0.1 : circle.vy * 0.1;
+				    		circle.vy = horizVel;
+				    		circle.vx = -vertVel * 0.7;
 				    	}
-				    	if ( (circle.y - circle.radius) >= (collisionDetect[i].bottomY - 3)) {
-				    		// Collide on bottom of line
-				    		circle.y = Math.abs(collisionDetect[i].ey + circle.radius/2);
-				    		circle.vy = -Math.abs(circle.vy);
-				    	} else if (circle.x <= collisionDetect[i].ex && circle.y <= collisionDetect[i].ey) {
+				    	if ((circle.x) >= collisionDetect[i].ex && circle.y >= collisionDetect[i].ey) {
 				    		// Collide on right of line
-					 		circle.vy = circle.vx * dampening;
-					 		circle.vx = -Math.abs(circle.vx);
+				    		circle.x = collisionDetect[i].ex + circle.radius + 2;
+				    		circle.vy = -horizVel;
+				    		circle.vx = vertVel;
 				    	}
 		    		}
 		    	}
