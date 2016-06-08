@@ -287,21 +287,21 @@
 		});
 
 		// Testing Section
-		// hoop.drawTest();
+		hoop.drawTest();
 		// Test ball position event
-		// canvas.addEventListener('mousedown', function(event){
-		// 	var ballMinX = circle.x - circle.radius + offsetPos.left,
-		// 		ballMinY = circle.y - circle.radius - offsetPos.top,
-		// 		ballMaxX = circle.x + circle.radius + offsetPos.left,
-		// 		ballMaxY = circle.y + circle.radius - offsetPos.top;
-		// 	var mousePosX = event.pageX,
-		// 		mousePosY = event.pageY - offsetPos.top;
-		// 		// console.log('mousePosX: ' + mousePosX);
-		// 		// console.log('ballMinX: ' + ballMinX);
-		// 		// console.log('ballMaxX: ' + ballMaxX);
-		// 	circle.x = mousePosX - offsetPos.left;
-		// 	circle.y = mousePosY;
-		// });
+		canvas.addEventListener('mousedown', function(event){
+			var ballMinX = circle.x - circle.radius + offsetPos.left,
+				ballMinY = circle.y - circle.radius - offsetPos.top,
+				ballMaxX = circle.x + circle.radius + offsetPos.left,
+				ballMaxY = circle.y + circle.radius - offsetPos.top;
+			var mousePosX = event.pageX,
+				mousePosY = event.pageY - offsetPos.top;
+				// console.log('mousePosX: ' + mousePosX);
+				// console.log('ballMinX: ' + ballMinX);
+				// console.log('ballMaxX: ' + ballMaxX);
+			circle.x = mousePosX - offsetPos.left;
+			circle.y = mousePosY;
+		});
 
 		requestAnimationFrame(executeFrame);
 	}
